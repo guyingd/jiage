@@ -9,6 +9,7 @@ import { MotionH1, MotionP, MotionDiv } from '@/components/client-wrapper'
 import { SearchBox } from '@/components/search-box'
 import { ChevronRightIcon } from '@/components/icons'
 import { useSession } from 'next-auth/react'
+import { type Product } from '@/lib/types'
 
 const container = {
   hidden: { opacity: 0 },
@@ -31,8 +32,10 @@ export default function Home() {
     .filter(([key]) => key !== '// 配置说明')
     .map(([category, items]) => ({
       name: category,
-      count: items.length,
-      totalValue: items.reduce((sum, item) => sum + item.price, 0)
+      count: Array.isArray(items) ? items.length : 0,
+      totalValue: Array.isArray(items) 
+        ? items.reduce((sum, item: Product) => sum + item.price, 0)
+        : 0
     }))
 
   return (

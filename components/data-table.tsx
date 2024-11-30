@@ -38,7 +38,15 @@ export function DataTable<T extends Record<string, any>>({
     key: keyof T | null
     direction: 'asc' | 'desc'
   }>({ key: null, direction: 'asc' })
-  const [activeFilters, setActiveFilters] = useState<Record<keyof T | string, string>>({})
+  
+  // 修复类型错误
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>(() => {
+    const initialFilters: Record<string, string> = {}
+    filters?.forEach(filter => {
+      initialFilters[String(filter.key)] = ''
+    })
+    return initialFilters
+  })
 
   // 处理排序
   const handleSort = (key: keyof T) => {
@@ -49,7 +57,7 @@ export function DataTable<T extends Record<string, any>>({
   }
 
   // 处理筛选
-  const handleFilter = (key: keyof T | string, value: string) => {
+  const handleFilter = (key: string, value: string) => {
     setActiveFilters(prev => ({
       ...prev,
       [key]: value
@@ -112,8 +120,8 @@ export function DataTable<T extends Record<string, any>>({
             <div key={String(filter.key)} className="flex items-center gap-2">
               <span className="text-sm font-medium">{filter.title}:</span>
               <select
-                value={activeFilters[filter.key] || ''}
-                onChange={e => handleFilter(filter.key, e.target.value)}
+                value={activeFilters[String(filter.key)] || ''}
+                onChange={e => handleFilter(String(filter.key), e.target.value)}
                 className="px-2 py-1 border rounded-lg bg-background"
               >
                 {filter.options.map(option => (

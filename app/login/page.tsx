@@ -1,14 +1,13 @@
 "use client"
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { MotionContainer } from '@/components/motion-container'
-import { MotionH1, MotionP } from '@/components/client-wrapper'
+import { useAuth } from '@/lib/auth-client'
 
 export default function LoginPage() {
   const router = useRouter()
+  const signIn = useAuth(state => state.signIn)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -16,68 +15,43 @@ export default function LoginPage() {
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const email = formData.get('email')
-    const password = formData.get('password')
+    const username = formData.get('username') as string
+    const password = formData.get('password') as string
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false
-      })
-
-      if (result?.error) {
-        toast.error('登录失败，请检查邮箱和密码')
-      } else {
+      const success = await signIn(username, password)
+      if (success) {
         toast.success('登录成功')
-        window.location.href = '/manage'
+        router.push('/')
+      } else {
+        toast.error('用户名或密码错误')
       }
     } catch (error) {
-      console.error('Login error:', error)
-      toast.error('登录时发生错误')
+      toast.error('登录失败')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm space-y-8">
-        <MotionContainer>
-          <div className="text-center space-y-4">
-            <MotionH1 
-              className="text-4xl font-bold"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              管理员登录
-            </MotionH1>
-            <MotionP 
-              className="text-xl text-muted-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              请输入您的登录信息
-            </MotionP>
-          </div>
-        </MotionContainer>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div className="space-y-4 rounded-md">
+        <div>
+          <h2 className="text-center text-3xl font-bold">登录</h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4 rounded-md shadow-sm">
             <div>
-              <label htmlFor="email" className="sr-only">
-                邮箱
+              <label htmlFor="username" className="sr-only">
+                用户名
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="username"
+                name="username"
+                type="text"
                 required
-                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary"
-                placeholder="邮箱"
+                className="relative block w-full rounded-lg border px-3 py-2 focus:z-10 focus:border-primary focus:outline-none focus:ring-primary"
+                placeholder="用户名"
               />
             </div>
             <div>
@@ -88,9 +62,8 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
                 required
-                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary"
+                className="relative block w-full rounded-lg border px-3 py-2 focus:z-10 focus:border-primary focus:outline-none focus:ring-primary"
                 placeholder="密码"
               />
             </div>
@@ -100,7 +73,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-4 py-3 text-white bg-primary rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="group relative flex w-full justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
             >
               {isLoading ? '登录中...' : '登录'}
             </button>

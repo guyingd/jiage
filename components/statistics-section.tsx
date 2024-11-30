@@ -9,10 +9,11 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement
+  ChartData,
+  ChartOptions
 } from 'chart.js'
-import { Bar, Doughnut } from 'react-chartjs-2'
-import { TrendingUp, Package, ShoppingBag } from 'lucide-react'
+import { Bar } from 'react-chartjs-2'
+import { type Product } from '@/lib/types'
 
 ChartJS.register(
   CategoryScale,
@@ -20,154 +21,96 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend,
-  ArcElement
+  Legend
 )
 
-interface StatisticsSectionProps {
-  data: {
-    [key: string]: Array<{ name: string; price: number }>
+interface ProductData {
+  [key: string]: Product[] | {
+    version: string
+    lastUpdate: string
+    categories: string
+    order: string
   }
 }
 
+interface StatisticsSectionProps {
+  data: ProductData
+}
+
 export function StatisticsSection({ data }: StatisticsSectionProps) {
-  const stats = useMemo(() => {
-    const categories = Object.keys(data).filter(key => key !== '// 配置说明')
-    const totalProducts = categories.reduce((sum, cat) => sum + data[cat].length, 0)
-    const totalValue = categories.reduce((sum, cat) => 
-      sum + data[cat].reduce((catSum, item) => catSum + item.price, 0), 0
-    )
-    const avgPrice = totalValue / totalProducts
+  const statistics = useMemo(() => {
+    const stats = Object.entries(data)
+      .filter(([key]) => key !== '// 配置说明')
+      .map(([category, items]) => {
+        if (!Array.isArray(items)) return null
+        return {
+          category,
+          count: items.length,
+          totalValue: items.reduce((sum, item) => sum + item.price, 0),
+          averagePrice: items.reduce((sum, item) => sum + item.price, 0) / items.length
+        }
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null)
 
     return {
-      totalProducts,
-      totalValue,
-      avgPrice,
-      categoriesCount: categories.length
+      totalProducts: stats.reduce((sum, item) => sum + item.count, 0),
+      totalValue: stats.reduce((sum, item) => sum + item.totalValue, 0),
+      averagePrice: stats.reduce((sum, item) => sum + item.totalValue, 0) / 
+                   stats.reduce((sum, item) => sum + item.count, 0),
+      categoryStats: stats
     }
   }, [data])
 
-  const chartData = useMemo(() => {
-    const categories = Object.keys(data).filter(key => key !== '// 配置说明')
-    const categoryValues = categories.map(cat => 
-      data[cat].reduce((sum, item) => sum + item.price, 0)
-    )
-    const categoryProducts = categories.map(cat => data[cat].length)
+  const chartData: ChartData<'bar'> = {
+    labels: statistics.categoryStats.map(item => item.category),
+    datasets: [
+      {
+        label: '商品数量',
+        data: statistics.categoryStats.map(item => item.count),
+        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+      },
+      {
+        label: '平均价格',
+        data: statistics.categoryStats.map(item => item.averagePrice),
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+      }
+    ]
+  }
 
-    return {
-      categories,
-      categoryValues,
-      categoryProducts
+  const options: ChartOptions<'bar'> = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: '分类统计'
+      }
     }
-  }, [data])
+  }
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="bg-card rounded-lg p-6 border">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Package className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">总商品数</p>
-              <h3 className="text-2xl font-bold">{stats.totalProducts}</h3>
-            </div>
-          </div>
+      {/* 总体统计 */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="bg-card p-4 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-2">总商品数</h3>
+          <p className="text-2xl">{statistics.totalProducts}</p>
         </div>
-        <div className="bg-card rounded-lg p-6 border">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <ShoppingBag className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">总价值</p>
-              <h3 className="text-2xl font-bold">¥{stats.totalValue.toLocaleString()}</h3>
-            </div>
-          </div>
+        <div className="bg-card p-4 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-2">总价值</h3>
+          <p className="text-2xl">¥{statistics.totalValue.toLocaleString()}</p>
         </div>
-        <div className="bg-card rounded-lg p-6 border">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">平均价格</p>
-              <h3 className="text-2xl font-bold">¥{Math.round(stats.avgPrice).toLocaleString()}</h3>
-            </div>
-          </div>
+        <div className="bg-card p-4 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-2">平均价格</h3>
+          <p className="text-2xl">¥{statistics.averagePrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="bg-card rounded-lg p-6 border">
-          <h3 className="text-lg font-semibold mb-4">分类价值分布</h3>
-          <div className="h-[300px]">
-            <Bar
-              data={{
-                labels: chartData.categories,
-                datasets: [
-                  {
-                    label: '总价值',
-                    data: chartData.categoryValues,
-                    backgroundColor: 'rgba(147, 51, 234, 0.5)',
-                    borderColor: 'rgb(147, 51, 234)',
-                    borderWidth: 1,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'top' as const,
-                  },
-                },
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="bg-card rounded-lg p-6 border">
-          <h3 className="text-lg font-semibold mb-4">商品数量分布</h3>
-          <div className="h-[300px] flex items-center justify-center">
-            <Doughnut
-              data={{
-                labels: chartData.categories,
-                datasets: [
-                  {
-                    data: chartData.categoryProducts,
-                    backgroundColor: [
-                      'rgba(255, 99, 132, 0.5)',
-                      'rgba(54, 162, 235, 0.5)',
-                      'rgba(255, 206, 86, 0.5)',
-                      'rgba(75, 192, 192, 0.5)',
-                      'rgba(153, 102, 255, 0.5)',
-                    ],
-                    borderColor: [
-                      'rgba(255, 99, 132, 1)',
-                      'rgba(54, 162, 235, 1)',
-                      'rgba(255, 206, 86, 1)',
-                      'rgba(75, 192, 192, 1)',
-                      'rgba(153, 102, 255, 1)',
-                    ],
-                    borderWidth: 1,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'right' as const,
-                  },
-                },
-              }}
-            />
-          </div>
-        </div>
+      {/* 图表 */}
+      <div className="bg-card p-4 rounded-lg border">
+        <Bar options={options} data={chartData} />
       </div>
     </div>
   )

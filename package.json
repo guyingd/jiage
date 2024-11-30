@@ -4,13 +4,17 @@
   "description": "商品价格查询系统",
   "main": "electron/main.js",
   "private": true,
+  "author": {
+    "name": "袁子兵",
+    "email": "2739218253@qq.com"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "next lint",
     "electron-dev": "cross-env ELECTRON_BUILD=true electron .",
-    "build-electron": "cross-env NODE_ENV=production NEXT_CONFIG_FILE=next.config.electron.js next build && next export && electron-builder",
+    "build-electron": "next build && tsc --project electron/tsconfig.json && electron-builder",
     "dist": "cross-env ELECTRON_BUILD=true electron-builder"
   },
   "dependencies": {
@@ -25,7 +29,6 @@
     "jspdf-autotable": "^3.8.4",
     "lucide-react": "^0.309.0",
     "next": "14.0.4",
-    "next-auth": "^4.24.10",
     "next-themes": "^0.2.1",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
@@ -34,7 +37,8 @@
     "sonner": "^1.7.0",
     "tailwind-merge": "^2.5.5",
     "xlsx": "^0.18.5",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "zustand": "^5.0.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -57,9 +61,14 @@
   "build": {
     "appId": "com.guyingd.price-query",
     "productName": "商品价格查询系统",
+    "copyright": "Copyright © 2024 袁子兵",
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "dist/app/**/*",
+      "dist/electron/**/*"
+    ],
     "win": {
       "target": [
         "nsis"
@@ -71,7 +80,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "商品价格查询系统"
+      "shortcutName": "商品价格查询系统",
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "installerHeaderIcon": "public/icon.ico"
     }
   }
 }

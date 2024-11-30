@@ -1,6 +1,6 @@
 # 商品价格查询系统
 
-一个基于 Next.js 和 Electron 的商品价格查询和管理系统。
+一个基于 Electron 和 Next.js 的桌面应用，用于商品价格的查询和管理。
 
 ## 功能特点
 
@@ -9,7 +9,8 @@
 - 商品管理
 - 数据统计
 - 暗黑模式
-- 响应式设计
+- 本地认证
+- 离线使用
 
 ## 技术栈
 
@@ -18,7 +19,8 @@
 - TypeScript
 - Tailwind CSS
 - Electron
-- SQLite
+- Zustand
+- Chart.js
 
 ## 开发
 
