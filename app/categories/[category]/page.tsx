@@ -9,7 +9,7 @@ import { ProductsToolbar } from '@/components/products-toolbar'
 import { PriceDisplay } from '@/components/price-display'
 import { PackageIcon } from '@/components/icons'
 import { DataTable } from '@/components/data-table'
-import { type Product } from '@/lib/types'
+import { type Product } from '@/lib/validations'
 
 export default function CategoryPage({
   params: { category },
@@ -28,25 +28,30 @@ export default function CategoryPage({
     notFound()
   }
 
-  const columns = [
+  const columns: Array<{
+    key: keyof Product
+    title: string
+    sortable: boolean
+    render?: (value: string | number | undefined, item: Product) => React.ReactNode
+  }> = [
     { 
-      key: 'name' as keyof Product, 
+      key: 'name',
       title: '商品名称', 
       sortable: true,
-      render: (value: Product['name'], item: Product) => (
+      render: (value) => (
         <div className="flex items-center gap-2">
           <PackageIcon className="h-4 w-4 text-muted-foreground" />
-          <span>{value}</span>
+          <span>{String(value || '')}</span>
         </div>
       )
     },
     { 
-      key: 'price' as keyof Product, 
+      key: 'price',
       title: '价格', 
       sortable: true,
-      render: (value: Product['price'], item: Product) => (
+      render: (value, item) => (
         <PriceDisplay 
-          price={value} 
+          price={Number(value || 0)}
           previousPrice={item.previousPrice}
           size="sm"
           showDiff={item.previousPrice !== undefined}
