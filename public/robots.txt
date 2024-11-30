@@ -1,0 +1,27 @@
+# 商品价格查询系统 robots.txt
+# 最后更新：2024-11-30
+
+# 全局规则
+User-agent: *
+Allow: /
+Allow: /categories/
+Allow: /about
+Allow: /privacy
+Allow: /terms
+
+# 禁止访问的路径
+Disallow: /api/
+Disallow: /manage/
+Disallow: /analysis/
+Disallow: /login
+Disallow: /_next/
+Disallow: /*?*
+
+# 爬虫限制
+Crawl-delay: 10
+
+# 站点地图
+Sitemap: https://price-query-system.vercel.app/sitemap.xml
+
+# 管理员联系方式
+# 邮箱：2739218253@qq.com 

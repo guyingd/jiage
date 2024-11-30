@@ -1,0 +1,47 @@
+{
+  "name": "price-query-system",
+  "version": "1.0.0",
+  "description": "一个现代化的商品价格查询和管理系统",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -p $PORT",
+    "lint": "next lint",
+    "analyze": "ANALYZE=true next build"
+  },
+  "dependencies": {
+    "@headlessui/react": "^1.7.18",
+    "@hookform/resolvers": "^3.3.2",
+    "@tailwindcss/forms": "^0.5.7",
+    "bcryptjs": "^2.4.3",
+    "chart.js": "^4.4.1",
+    "framer-motion": "^10.16.16",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
+    "lucide-react": "^0.309.0",
+    "next": "14.0.4",
+    "next-auth": "^4.24.10",
+    "next-themes": "^0.2.1",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.49.2",
+    "sonner": "^1.7.0",
+    "xlsx": "^0.18.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/chart.js": "^2.9.41",
+    "@types/jspdf": "^2.0.0",
+    "@types/node": "^20.10.4",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/xlsx": "^0.0.36",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.3.3"
+  }
+}
