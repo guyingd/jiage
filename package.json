@@ -9,9 +9,8 @@
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "next lint",
-    "analyze": "ANALYZE=true next build",
     "electron-dev": "cross-env ELECTRON_BUILD=true electron .",
-    "build-electron": "cross-env ELECTRON_BUILD=true next build && next export && electron-builder",
+    "build-electron": "cross-env NODE_ENV=production NEXT_CONFIG_FILE=next.config.electron.js next build && next export && electron-builder",
     "dist": "cross-env ELECTRON_BUILD=true electron-builder"
   },
   "dependencies": {
@@ -20,6 +19,7 @@
     "@tailwindcss/forms": "^0.5.7",
     "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^10.16.16",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
@@ -32,6 +32,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.49.2",
     "sonner": "^1.7.0",
+    "tailwind-merge": "^2.5.5",
     "xlsx": "^0.18.5",
     "zod": "^3.22.4"
   },

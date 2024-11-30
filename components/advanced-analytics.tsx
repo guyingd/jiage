@@ -15,7 +15,7 @@ import {
   RadialLinearScale
 } from 'chart.js'
 import { Bar, Doughnut, Line, Radar } from 'react-chartjs-2'
-import { ProductData } from '@/lib/products'
+import { type ProductData, type Product } from '@/lib/types'
 
 ChartJS.register(
   CategoryScale,
@@ -38,6 +38,10 @@ export function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
   const stats = useMemo(() => {
     const categories = Object.entries(data)
       .filter(([key]) => key !== '// 配置说明')
+      .map(([category, items]) => ({
+        name: category,
+        items: items as Product[]
+      }))
 
     // 基础统计
     let totalProducts = 0
@@ -63,7 +67,7 @@ export function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
       revenue: Math.floor(Math.random() * 10000)
     }))
 
-    categories.forEach(([_, items]) => {
+    categories.forEach(({ name, items }) => {
       items.forEach((item: { price: number }) => {
         totalProducts++
         totalValue += item.price
@@ -83,7 +87,7 @@ export function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
 
     const avgPrice = totalProducts > 0 ? priceSum / totalProducts : 0
     const priceStdDev = Math.sqrt(
-      categories.reduce((sum, [_, items]) => 
+      categories.reduce((sum, { name, items }) => 
         sum + items.reduce((s, item: { price: number }) => 
           s + Math.pow(item.price - avgPrice, 2), 0
         ), 0
@@ -91,7 +95,7 @@ export function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
     )
 
     return {
-      categories: categories.map(([name, items]) => ({
+      categories: categories.map(({ name, items }) => ({
         name,
         count: items.length,
         totalValue: items.reduce((sum, item: { price: number }) => sum + item.price, 0),

@@ -1,38 +1,47 @@
 import { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
 import { loginSchema } from './validations'
+
+// 固定的登录凭据
+const VALID_CREDENTIALS = {
+  email: '2739218253@qq.com',
+  password: 'admin123'
+}
 
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        username: { label: "用户名", type: "text" },
+        email: { label: "邮箱", type: "email" },
         password: { label: "密码", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials) return null
+        if (!credentials) {
+          console.log('No credentials provided')
+          return null
+        }
 
         try {
           // 验证输入
-          const { username, password } = await loginSchema.parseAsync(credentials)
+          const { email, password } = await loginSchema.parseAsync(credentials)
+          console.log('Input validated:', { email })
 
-          // 在实际应用中，这里应该查询数据库
-          const validUsername = 'admin'
-          const validPassword = await bcrypt.hash('admin123', 10)
-
-          if (username === validUsername && 
-              await bcrypt.compare(password, validPassword)) {
+          // 直接比较凭据
+          if (email === VALID_CREDENTIALS.email && 
+              password === VALID_CREDENTIALS.password) {
+            console.log('Login successful')
             return {
               id: '1',
-              name: username,
-              email: '2739218253@qq.com'
+              name: '管理员',
+              email: VALID_CREDENTIALS.email
             }
           }
 
+          console.log('Invalid credentials')
           return null
-        } catch {
+        } catch (error) {
+          console.error('Auth error:', error)
           return null
         }
       }

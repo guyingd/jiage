@@ -30,14 +30,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# data files
-/analysis-data*.json
-products.json
-analysis-data.json_batch1.json
-
 # IDE
 .vscode/
 .idea/
 
 # electron
-/electron/main.js 
+/electron/main.js
+
+# data files
+/analysis-data*.json
+/public/data/products.json
+analysis-data.json_batch1.json

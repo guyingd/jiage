@@ -1,119 +1,28 @@
+import { writeFile } from 'fs/promises'
 import { NextResponse } from 'next/server'
-import { getProducts, saveProducts, type ProductData, type Product } from '@/lib/products'
-
-export async function GET() {
-  const products = getProducts()
-  return NextResponse.json(products)
-}
+import { join } from 'path'
 
 export async function POST(request: Request) {
   try {
     const data = await request.json()
-    let products = getProducts()
     
-    switch (data.action) {
-      case 'addCategory': {
-        if (products[data.name]) {
-          return NextResponse.json({ error: '分类已存在' }, { status: 400 })
-        }
-        products[data.name] = []
-        break
-      }
-
-      case 'addProduct': {
-        const { category: cat, product } = data
-        if (!products[cat]) {
-          return NextResponse.json({ error: '分类不存在' }, { status: 400 })
-        }
-        if (products[cat].some(p => p.name === product.name)) {
-          return NextResponse.json({ error: '商品已存在' }, { status: 400 })
-        }
-        products[cat].push(product)
-        break
-      }
-
-      case 'editProduct': {
-        const { category: cat, oldName, product } = data
-        const index = products[cat].findIndex(p => p.name === oldName)
-        if (index === -1) {
-          return NextResponse.json({ error: '商品不存在' }, { status: 400 })
-        }
-        products[cat][index] = product
-        break
-      }
-
-      case 'deleteProduct': {
-        const { category: cat, name } = data
-        products[cat] = products[cat].filter(p => p.name !== name)
-        break
-      }
-
-      case 'bulkDelete': {
-        const { category: cat, names } = data
-        products[cat] = products[cat].filter(p => !names.includes(p.name))
-        break
-      }
-
-      case 'bulkUpdatePrice': {
-        const { category: cat, names, priceChange, isPercentage } = data
-        products[cat] = products[cat].map(p => {
-          if (names.includes(p.name)) {
-            const newPrice = isPercentage
-              ? p.price * (1 + priceChange / 100)
-              : p.price + priceChange
-            return { ...p, price: Math.max(0, Math.round(newPrice * 100) / 100) }
-          }
-          return p
-        })
-        break
-      }
-
-      case 'import': {
-        Object.entries(data.data).forEach(([category, items]) => {
-          if (!products[category]) {
-            products[category] = []
-          }
-          const existingNames = new Set(products[category].map(p => p.name))
-          ;(items as Product[]).forEach(item => {
-            if (!existingNames.has(item.name)) {
-              products[category].push(item)
-            }
-          })
-        })
-        break
-      }
-
-      case 'editCategory': {
-        const { oldName, newName } = data
-        if (!products[oldName]) {
-          return NextResponse.json({ error: '分类不存在' }, { status: 400 })
-        }
-        if (products[newName]) {
-          return NextResponse.json({ error: '新分类名称已存在' }, { status: 400 })
-        }
-        products[newName] = products[oldName]
-        delete products[oldName]
-        break
-      }
-
-      case 'deleteCategory': {
-        const { name } = data
-        if (!products[name]) {
-          return NextResponse.json({ error: '分类不存在' }, { status: 400 })
-        }
-        delete products[name]
-        break
-      }
+    // 验证数据格式
+    if (typeof data !== 'object') {
+      return new NextResponse('数据格式无效', { status: 400 })
     }
 
-    const success = saveProducts(products)
-    if (!success) {
-      return NextResponse.json({ error: '保存失败' }, { status: 500 })
+    // 保存配置信息
+    if (!data['// 配置说明']) {
+      return new NextResponse('缺少配置信息', { status: 400 })
     }
 
-    return NextResponse.json(products)
+    // 保存到文件
+    const filePath = join(process.cwd(), 'public/data/products.json')
+    await writeFile(filePath, JSON.stringify(data, null, 2))
+
+    return new NextResponse('保存成功', { status: 200 })
   } catch (error) {
-    console.error('API Error:', error)
-    return NextResponse.json({ error: '操作失败' }, { status: 500 })
+    console.error('保存错误:', error)
+    return new NextResponse('内部错误', { status: 500 })
   }
 } 

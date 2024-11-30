@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
-import productsData from '@/products.json'
+import productsData from '@/public/data/products.json'
 import { ProductsToolbar } from '@/components/products-toolbar'
 import { PriceDisplay } from '@/components/price-display'
 import { PackageIcon } from '@/components/icons'
 import { DataTable } from '@/components/data-table'
-import { type Product } from '@/lib/validations'
+import { type Product } from '@/lib/types'
 
 export default function CategoryPage({
   params: { category },
@@ -17,7 +17,7 @@ export default function CategoryPage({
   params: { category: string }
 }) {
   const decodedCategory = decodeURIComponent(category)
-  const items = productsData[decodedCategory]
+  const items = (productsData as any)[decodedCategory] as Product[]
   const [searchTerm, setSearchTerm] = useState('')
   const [sortConfig, setSortConfig] = useState<{
     field: 'name' | 'price'

@@ -6,12 +6,14 @@ const nextConfig = {
   }
 }
 
-// 只在构建桌面应用时启用导出
-if (process.env.ELECTRON_BUILD) {
+// 如果是桌面应用构建，使用不同的配置
+if (process.env.NEXT_CONFIG_FILE === 'next.config.electron.js') {
   nextConfig.output = 'export'
   nextConfig.images = {
     unoptimized: true
   }
+  // 排除 API 路由
+  nextConfig.excludePages = ['/api/**/*']
 }
 
 module.exports = nextConfig 

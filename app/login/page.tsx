@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { MotionContainer } from '@/components/motion-container'
+import { MotionH1, MotionP } from '@/components/client-wrapper'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,77 +16,95 @@ export default function LoginPage() {
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+    const email = formData.get('email')
+    const password = formData.get('password')
 
     try {
-      const result = await signIn("credentials", {
+      const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
-        callbackUrl: "/manage"
+        redirect: false
       })
 
       if (result?.error) {
-        toast.error("登录失败：邮箱或密码错误")
+        toast.error('登录失败，请检查邮箱和密码')
       } else {
-        router.push("/manage")
-        router.refresh()
-        toast.success("登录成功")
+        toast.success('登录成功')
+        window.location.href = '/manage'
       }
     } catch (error) {
-      toast.error("登录失败，请稍后重试")
+      console.error('Login error:', error)
+      toast.error('登录时发生错误')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
-      <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-lg shadow-lg">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">管理员登录</h2>
-          <p className="mt-2 text-muted-foreground">
-            请输入管理员账号和密码
-          </p>
-        </div>
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="w-full max-w-sm space-y-8">
+        <MotionContainer>
+          <div className="text-center space-y-4">
+            <MotionH1 
+              className="text-4xl font-bold"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              管理员登录
+            </MotionH1>
+            <MotionP 
+              className="text-xl text-muted-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              请输入您的登录信息
+            </MotionP>
+          </div>
+        </MotionContainer>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium">
-              邮箱
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="请输入邮箱"
-            />
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          <div className="space-y-4 rounded-md">
+            <div>
+              <label htmlFor="email" className="sr-only">
+                邮箱
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary"
+                placeholder="邮箱"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="sr-only">
+                密码
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary"
+                placeholder="密码"
+              />
+            </div>
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium">
-              密码
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className="mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="请输入密码"
-            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full px-4 py-3 text-white bg-primary rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? '登录中...' : '登录'}
+            </button>
           </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {isLoading ? "登录中..." : "登录"}
-          </button>
         </form>
       </div>
     </div>

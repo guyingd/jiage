@@ -1,7 +1,7 @@
 "use client"
 
 import { SearchDialog } from '@/components/search-dialog'
-import productsData from '@/products.json'
+import productsData from '@/public/data/products.json'
 import Link from 'next/link'
 import { StatisticsSection } from '@/components/statistics-section'
 import { MotionContainer } from '@/components/motion-container'

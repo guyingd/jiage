@@ -1,98 +1,80 @@
 "use client"
 
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
 import { Dialog } from '@headlessui/react'
 import { X } from 'lucide-react'
-import { categorySchema, type CategoryFormData } from '@/lib/validations'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { type CategoryFormData } from '@/lib/validations'
 
 interface CategoryDialogProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (name: string) => void
-  title: string
-  initialValue?: string
+  initialData?: CategoryFormData
 }
 
-export function CategoryDialog({
-  isOpen,
-  onClose,
-  onSubmit,
-  title,
-  initialValue = ''
-}: CategoryDialogProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset
-  } = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: {
-      name: initialValue
-    }
-  })
+export function CategoryDialog({ isOpen, onClose, initialData }: CategoryDialogProps) {
+  const [name, setName] = useState(initialData?.name || '')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const onSubmitForm = handleSubmit((data) => {
-    onSubmit(data.name)
-    reset()
-  })
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      // TODO: 实现保存逻辑
+      toast.success(initialData ? '分类更新成功' : '分类添加成功')
+      onClose()
+    } catch (error) {
+      toast.error('操作失败，请重试')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
-    <Dialog
-      open={isOpen}
-      onClose={onClose}
-      className="relative z-50"
-    >
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto max-w-sm w-full bg-background rounded-lg shadow-lg">
-          <div className="flex items-center justify-between border-b p-4">
+          <div className="flex items-center justify-between border-b px-4 py-3">
             <Dialog.Title className="text-lg font-semibold">
-              {title}
+              {initialData ? '编辑分类' : '添加分类'}
             </Dialog.Title>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-accent rounded-lg transition-colors"
-            >
-              <X className="h-5 w-5" />
+            <button onClick={onClose}>
+              <X className="h-5 w-5 text-muted-foreground" />
             </button>
           </div>
 
-          <form onSubmit={onSubmitForm} className="p-4 space-y-4">
+          <form onSubmit={handleSubmit} className="p-4 space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-1">
                 分类名称
               </label>
               <input
-                {...register('name')}
+                id="name"
                 type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="请输入分类名称"
-                autoFocus
+                required
               />
-              {errors.name && (
-                <p className="mt-1 text-sm text-destructive">
-                  {errors.name.message}
-                </p>
-              )}
             </div>
+
             <div className="flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={onClose}
-                className="px-4 py-2 border rounded-lg hover:bg-accent transition-colors"
+                disabled={isSubmitting}
               >
                 取消
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {isSubmitting ? '提交中...' : '确定'}
-              </button>
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? '保存中...' : '保存'}
+              </Button>
             </div>
           </form>
         </Dialog.Panel>

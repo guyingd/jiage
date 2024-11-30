@@ -5,7 +5,7 @@ import { Dialog } from '@headlessui/react'
 import { SearchIcon, XIcon, Edit2Icon, ClockIcon } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import productsData from '@/products.json'
+import productsData from '@/public/data/products.json'
 import { PriceDisplay } from '@/components/price-display'
 
 type Product = {

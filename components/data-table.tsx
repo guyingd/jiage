@@ -1,44 +1,46 @@
 "use client"
 
-import { useState, useMemo } from 'react'
-import { ChevronUpIcon, ChevronDownIcon, PackageIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/icons'
-import { PriceDisplay } from '@/components/price-display'
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+interface Column<T> {
+  key: keyof T | 'actions'
+  title: string
+  sortable?: boolean
+  render?: (value: string | number | undefined, item: T) => React.ReactNode
+}
 
 interface DataTableProps<T> {
   data: T[]
-  columns: {
-    key: keyof T
-    title: string
-    sortable?: boolean
-    render?: (value: T[keyof T], item: T) => React.ReactNode
-  }[]
-  filters?: {
-    key: keyof T
-    title: string
-    options: { label: string; value: string }[]
-  }[]
-  onSelectionChange?: (selectedItems: T[]) => void
+  columns: Column<T>[]
   showPagination?: boolean
   pageSize?: number
+  filters?: Array<{
+    key: keyof T
+    title: string
+    options: Array<{
+      label: string
+      value: string
+    }>
+  }>
 }
 
-export function DataTable<T extends { [key: string]: any }>({
+export function DataTable<T extends Record<string, any>>({
   data,
   columns,
-  filters,
-  onSelectionChange,
   showPagination = false,
-  pageSize = 10
+  pageSize = 10,
+  filters
 }: DataTableProps<T>) {
+  const [currentPage, setCurrentPage] = useState(1)
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T | null
     direction: 'asc' | 'desc'
   }>({ key: null, direction: 'asc' })
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
-  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
-  const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [activeFilters, setActiveFilters] = useState<Record<keyof T | string, string>>({})
 
+  // 处理排序
   const handleSort = (key: keyof T) => {
     setSortConfig(prev => ({
       key,
@@ -46,177 +48,112 @@ export function DataTable<T extends { [key: string]: any }>({
     }))
   }
 
-  const handleFilter = (key: keyof T, value: string) => {
-    setFilterValues(prev => ({ ...prev, [key]: value }))
+  // 处理筛选
+  const handleFilter = (key: keyof T | string, value: string) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [key]: value
+    }))
+    setCurrentPage(1)
   }
 
-  const handleSelectAll = (checked: boolean) => {
-    const newSelected = new Set<number>()
-    if (checked) {
-      filteredData.forEach((_, index) => newSelected.add(index))
-    }
-    setSelectedItems(newSelected)
-    onSelectionChange?.(checked ? filteredData : [])
-  }
-
-  const handleSelectItem = (index: number, checked: boolean) => {
-    const newSelected = new Set(selectedItems)
-    if (checked) {
-      newSelected.add(index)
-    } else {
-      newSelected.delete(index)
-    }
-    setSelectedItems(newSelected)
-    onSelectionChange?.(Array.from(newSelected).map(i => filteredData[i]))
-  }
-
-  const filteredData = useMemo(() => {
-    let result = [...data]
-
-    // 应用搜索
-    if (searchTerm) {
-      result = result.filter(item =>
-        Object.values(item).some(value =>
-          String(value).toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      )
-    }
-
-    // 应用过滤器
-    Object.entries(filterValues).forEach(([key, value]) => {
-      if (value) {
-        if (key === 'price') {
-          // 处理价格区间过滤
-          const [min, max] = value.split('-').map(Number)
-          result = result.filter(item => {
-            const price = Number(item[key])
-            if (value === '1000+') {
-              return price >= 1000
-            }
-            return price >= min && price <= max
-          })
-        } else {
-          // 其他过滤器保持原样
-          result = result.filter(item => String(item[key]) === value)
-        }
+  // 应用筛选
+  let filteredData = [...data]
+  Object.entries(activeFilters).forEach(([key, value]) => {
+    if (value) {
+      if (value.includes('-')) {
+        // 处理范围筛选
+        const [min, max] = value.split('-').map(Number)
+        filteredData = filteredData.filter(item => {
+          const itemValue = Number(item[key])
+          if (max) {
+            return itemValue >= min && itemValue <= max
+          }
+          return itemValue >= min
+        })
+      } else {
+        // 处理普通筛选
+        filteredData = filteredData.filter(item => String(item[key]) === value)
       }
+    }
+  })
+
+  // 应用排序
+  if (sortConfig.key) {
+    filteredData.sort((a, b) => {
+      const aValue = a[sortConfig.key as keyof T]
+      const bValue = b[sortConfig.key as keyof T]
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue
+      }
+      
+      const aString = String(aValue).toLowerCase()
+      const bString = String(bValue).toLowerCase()
+      return sortConfig.direction === 'asc'
+        ? aString.localeCompare(bString)
+        : bString.localeCompare(aString)
     })
-
-    // 应用排序
-    if (sortConfig.key) {
-      result.sort((a, b) => {
-        const aValue = a[sortConfig.key!]
-        const bValue = b[sortConfig.key!]
-        const modifier = sortConfig.direction === 'asc' ? 1 : -1
-
-        if (typeof aValue === 'string') {
-          return aValue.localeCompare(String(bValue)) * modifier
-        }
-        return ((aValue as number) - (bValue as number)) * modifier
-      })
-    }
-
-    return result
-  }, [data, filterValues, sortConfig, searchTerm])
-
-  // 计算分页数据
-  const totalPages = Math.ceil(filteredData.length / pageSize)
-  const paginatedData = showPagination
-    ? filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-    : filteredData
-
-  const renderCell = (column: DataTableProps<T>['columns'][0], item: T) => {
-    if (column.render) {
-      return column.render(item[column.key], item)
-    }
-
-    // 默认渲染器
-    const value = item[column.key]
-    
-    // 商品名称列
-    if (column.key === 'name') {
-      return (
-        <div className="flex items-center gap-2">
-          <PackageIcon className="h-4 w-4 text-muted-foreground" />
-          <span>{value}</span>
-        </div>
-      )
-    }
-
-    // 价格列
-    if (column.key === 'price') {
-      return (
-        <PriceDisplay 
-          price={value} 
-          previousPrice={item.previousPrice}
-          size="sm"
-          showDiff={item.previousPrice !== undefined}
-        />
-      )
-    }
-
-    return String(value)
   }
+
+  // 分页
+  const totalPages = Math.ceil(filteredData.length / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const paginatedData = showPagination
+    ? filteredData.slice(startIndex, startIndex + pageSize)
+    : filteredData
 
   return (
     <div className="space-y-4">
-      {/* 搜索和过滤器 */}
-      <div className="flex flex-wrap gap-4">
-        <input
-          type="text"
-          placeholder="搜索..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        {filters?.map(filter => (
-          <select
-            key={String(filter.key)}
-            value={filterValues[String(filter.key)] || ''}
-            onChange={e => handleFilter(filter.key, e.target.value)}
-            className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">{filter.title}</option>
-            {filter.options.map(option => (
-              <option key={String(option.value)} value={String(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ))}
-      </div>
+      {/* 筛选器 */}
+      {filters && filters.length > 0 && (
+        <div className="flex flex-wrap gap-4 mb-4">
+          {filters.map(filter => (
+            <div key={String(filter.key)} className="flex items-center gap-2">
+              <span className="text-sm font-medium">{filter.title}:</span>
+              <select
+                value={activeFilters[filter.key] || ''}
+                onChange={e => handleFilter(filter.key, e.target.value)}
+                className="px-2 py-1 border rounded-lg bg-background"
+              >
+                {filter.options.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 表格 */}
-      <div className="relative overflow-x-auto">
+      <div className="border rounded-lg overflow-hidden">
         <table className="w-full">
           <thead className="bg-muted">
             <tr>
-              {onSelectionChange && (
-                <th className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.size === filteredData.length}
-                    onChange={e => handleSelectAll(e.target.checked)}
-                    className="rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                </th>
-              )}
               {columns.map(column => (
                 <th
                   key={String(column.key)}
-                  className={`px-4 py-3 text-left ${
-                    column.sortable ? 'cursor-pointer select-none' : ''
-                  }`}
-                  onClick={() => column.sortable && handleSort(column.key)}
+                  className="px-4 py-3 text-left font-medium text-muted-foreground"
                 >
                   <div className="flex items-center gap-2">
                     {column.title}
-                    {column.sortable && sortConfig.key === column.key && (
-                      sortConfig.direction === 'asc' ? (
-                        <ChevronUpIcon className="h-4 w-4" />
-                      ) : (
-                        <ChevronDownIcon className="h-4 w-4" />
-                      )
+                    {column.sortable && (
+                      <button
+                        onClick={() => handleSort(column.key as keyof T)}
+                        className="p-0.5 hover:bg-accent rounded"
+                      >
+                        {sortConfig.key === column.key ? (
+                          sortConfig.direction === 'asc' ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )
+                        ) : (
+                          <div className="h-4 w-4" />
+                        )}
+                      </button>
                     )}
                   </div>
                 </th>
@@ -225,20 +162,15 @@ export function DataTable<T extends { [key: string]: any }>({
           </thead>
           <tbody>
             {paginatedData.map((item, index) => (
-              <tr key={index} className="border-t hover:bg-muted/50">
-                {onSelectionChange && (
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.has(index)}
-                      onChange={e => handleSelectItem(index, e.target.checked)}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                  </td>
-                )}
+              <tr
+                key={index}
+                className="border-t hover:bg-muted/50 transition-colors"
+              >
                 {columns.map(column => (
                   <td key={String(column.key)} className="px-4 py-3">
-                    {renderCell(column, item)}
+                    {column.render
+                      ? column.render(item[column.key], item)
+                      : String(item[column.key] || '')}
                   </td>
                 ))}
               </tr>
@@ -247,34 +179,36 @@ export function DataTable<T extends { [key: string]: any }>({
         </table>
       </div>
 
-      {/* 分页和统计信息 */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <div>
-          共 {filteredData.length} 条记录
-          {selectedItems.size > 0 && ` (已选择 ${selectedItems.size} 条)`}
-        </div>
-        {showPagination && totalPages > 1 && (
+      {/* 分页 */}
+      {showPagination && totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            显示 {startIndex + 1}-{Math.min(startIndex + pageSize, filteredData.length)} 条，
+            共 {filteredData.length} 条
+          </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="p-2 hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
             >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </button>
-            <span>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm">
               第 {currentPage} 页，共 {totalPages} 页
             </span>
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="p-2 hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
             >
-              <ChevronRightIcon className="h-4 w-4" />
-            </button>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 } 
