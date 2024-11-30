@@ -1,10 +1,6 @@
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
+/package-lock.json
 
 # next.js
 /.next/
@@ -24,6 +20,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.production
 
 # vercel
 .vercel
@@ -31,6 +28,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# data files
+/analysis-data*.json
+products.json
 
 # IDE
 .vscode/
